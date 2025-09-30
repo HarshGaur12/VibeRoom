@@ -33,9 +33,6 @@ const participantSchema = new Schema({
         type: Date,
         default: Date.now
     },
-    leftAt:{
-        type: Date
-    },
 });
 
 export const Participant = mongoose.model("Participant", participantSchema);

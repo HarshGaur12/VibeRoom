@@ -4,8 +4,6 @@ import { ApiResponse } from "../utils/ApiResponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { Participant } from "../models/participant.model.js"
 import crypto from "crypto";
-import e from "express";
-import path from "path";
 
 const generateRoomCode = () => crypto.randomBytes(4).toString("hex");
 
@@ -108,9 +106,12 @@ const joinRoom = asyncHandler(async (req, res) => {
                   );
     };
 
+    const role = room.host.toString() === req.user._id.toString() ? "host" : "participant";
+
     const newParticipant = await Participant.create({
         room: room._id,
-        user: req.user._id
+        user: req.user._id,
+        role
     });
 
     if(!newParticipant){
@@ -130,11 +131,63 @@ const joinRoom = asyncHandler(async (req, res) => {
 });
 
 const leaveRoom = asyncHandler(async (req, res) => {
-    
+    const {roomCode} = req.params;
+
+    if(!roomCode){
+        throw new ApiError(401, "Room Code is required to leave a room");
+    }
+
+    const room = await Room.findOne({roomCode, isActive: true});
+
+    if(!room){
+        throw new ApiError(404, "Room is not found or Inactive");
+    }
+
+    const removeParticipant = await Participant.findOneAndDelete({
+        room: room._id,
+        user: req.user._id
+    });
+
+    if(!removeParticipant){
+        throw new ApiError(404, "Participant not found in the room");
+    }
+
+    room.participants.pull(removeParticipant._id);
+    await room.save();
+
+    return res.status(200)
+              .json(
+                new ApiResponse(201, {}, "Left the Room Successfully")
+              );
 });
 
 const endRoom = asyncHandler(async (req, res) => {
-    
+    const {roomCode} = req.params;
+
+    if(!roomCode){
+        throw new ApiError(401, "Room Code is required to end a room");
+    }
+
+    const room = await Room.findOne({roomCode, isActive: true});
+
+    if(!room){
+        throw new ApiError(404, "Room is not found or Inactive");
+    }
+
+    if(room.host.toString() !== req.user._id.toString()){
+        throw new ApiError(403, "Only host can end the room");
+    }
+
+    room.isActive = false;
+    room.participants = [];
+    await room.save();
+
+    await Participant.deleteMany({room: room._id});
+
+    return res
+           .status(200)
+           .json(new ApiResponse(201, {}, "Room Ended Successfully"))
+
 });
 
 export {
