@@ -190,9 +190,38 @@ const endRoom = asyncHandler(async (req, res) => {
 
 });
 
+const getRoomHistory = asyncHandler(async (req, res) => {
+    const rooms = await Room.find({isActive: false, host: req.user._id})
+                            .sort({createdAt: -1});
+
+    if(!rooms){
+        throw new ApiError(404, "No room history found");
+    }
+    
+    return res
+            .status(200)
+            .json(new ApiResponse(200, rooms, "Room history fetched successfully"));
+            
+});
+
+const deleteAllRoomsHistory = asyncHandler(async (req, res) => {
+    const deleteRooms = await Room.deleteMany({isActive: false, host: req.user._id});
+
+    if(!deleteRooms){
+        throw new ApiError(500, "Unable to delete room history");
+    }
+
+    return res
+           .status(200)
+           .json(new ApiResponse(201, {}, "All room history deleted successfully"));
+});
+
+
 export {
     createRoom,
     joinRoom,
     leaveRoom,
-    endRoom
+    endRoom,
+    getRoomHistory,
+    deleteAllRoomsHistory,
 }
