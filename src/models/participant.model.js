@@ -17,18 +17,11 @@ const participantSchema = new Schema({
         enum: ["host", "participant"],
         default: "participant"
     },
-    isMuted:{
-        type: Boolean,
-        default: false
-    },
-    isVideoOn:{
-        type: Boolean,
-        default: false
-    },
-    isScreenSharing:{
-        type: Boolean,
-        default: false
-    },
+    permission:{
+        isMuted:{type: Boolean, default: false},
+        isVideoOn:{type: Boolean, default: false},
+        isScreenSharing:{type: Boolean, default: false}
+    }, 
     joinedAt:{
         type: Date,
         default: Date.now

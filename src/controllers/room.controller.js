@@ -226,7 +226,7 @@ const deleteAllRoomsHistory = asyncHandler(async (req, res) => {
 
 const updateRoomSettings = asyncHandler(async (req, res) => {
     const {roomCode} = req.params;
-    const {chatEnabled, voiceEnabled, allowScreenShare} = req.body;
+    const {chatEnabled, voiceEnabled, allowScreenShare, videoEnabled} = req.body;
 
     if(!roomCode){
         throw new ApiError(401, "Room Code is required to update room settings");
@@ -253,6 +253,7 @@ const updateRoomSettings = asyncHandler(async (req, res) => {
     if(chatEnabled !== undefined) room.settings.chatEnabled = chatEnabled;
     if(voiceEnabled !== undefined) room.settings.voiceEnabled = voiceEnabled;
     if(allowScreenShare !== undefined) room.settings.allowScreenShare = allowScreenShare;
+    if(videoEnabled !== undefined) room.settings.videoEnabled = videoEnabled;
 
     await room.save();
 
@@ -263,7 +264,7 @@ const updateRoomSettings = asyncHandler(async (req, res) => {
 
 const updateParticipantAccess = asyncHandler(async (req, res) => {
     const {roomCode, participantId} = req.params;
-    const {role, isMuted, isVideoOn, isScreenSharing} = req.body;
+    const {role} = req.body;
 
     if(!roomCode || !participantId){
         throw new ApiError(401, "Room Code and Participant ID are required to update participant access");
@@ -281,36 +282,22 @@ const updateParticipantAccess = asyncHandler(async (req, res) => {
         throw new ApiError(404, "Participant not found");
     }
 
-    const isParticipant = participant.user.toString() === req.user._id.toString();
+    // const isParticipant = participant.user.toString() === req.user._id.toString();
     const isHost = room.host.toString() === req.user._id.toString();
 
-    if(!isHost && !isParticipant){ //-> this line for 3rd person who is neither host nor participant
-        throw new ApiError(403, "Only host can update participant access");
+    if(!isHost){ 
+        throw new ApiError(403, "Only host can update participant role");
     }
 
     if(role !== undefined){
-        if(!isHost){
-            throw new ApiError(403, "Only host can update participant role");
-        }
         if(!["host", "participant"].includes(role)){
             throw new ApiError(400, "Invalid role");
         }
 
         participant.role = role;
+        await participant.save();
     }
 
-    
-    if (isMuted !== undefined || isVideoOn !== undefined || isScreenSharing !== undefined) {
-        if(!isHost && !isParticipant){
-            throw new ApiError(403, "You can only update your own media controls");
-        }
-
-        if (isMuted !== undefined) participant.isMuted = isMuted;
-        if (isVideoOn !== undefined) participant.isVideoOn = isVideoOn;
-        if (isScreenSharing !== undefined) participant.isScreenSharing = isScreenSharing;
-    }
-
-    await participant.save();
 
     return res
            .status(200)
