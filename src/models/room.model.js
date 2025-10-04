@@ -24,7 +24,8 @@ const roomSchema = new Schema({
     settings:{
         chatEnabled:{type: Boolean, default: true},
         voiceEnabled:{type: Boolean, default: true},
-        allowScreenShare:{type: Boolean, default: true}
+        allowScreenShare:{type: Boolean, default: true},
+        videoEnabled:{type: Boolean, default: true}
     },
     participants:[
         {type: mongoose.Schema.Types.ObjectId,

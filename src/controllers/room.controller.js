@@ -174,7 +174,15 @@ const endRoom = asyncHandler(async (req, res) => {
         throw new ApiError(404, "Room is not found or Inactive");
     }
 
-    if(room.host.toString() !== req.user._id.toString()){
+    const isOriginalHost = room.host.toString() === req.user._id.toString();
+
+    const participantWithHostRole = await Participant.findOne({
+        room: room._id,
+        user: req.user._id,
+        role: "host"
+    });
+
+    if(!isOriginalHost && !participantWithHostRole){
         throw new ApiError(403, "Only host can end the room");
     }
 
@@ -216,6 +224,87 @@ const deleteAllRoomsHistory = asyncHandler(async (req, res) => {
            .json(new ApiResponse(201, {}, "All room history deleted successfully"));
 });
 
+const updateRoomSettings = asyncHandler(async (req, res) => {
+    const {roomCode} = req.params;
+    const {chatEnabled, voiceEnabled, allowScreenShare, videoEnabled} = req.body;
+
+    if(!roomCode){
+        throw new ApiError(401, "Room Code is required to update room settings");
+    }
+
+    const room = await Room.findOne({roomCode, isActive: true});
+
+    if(!room || !room.isActive){
+        throw new ApiError(404, "Room is not found or Inactive");
+    }
+
+    const isOriginalHost = room.host.toString() === req.user._id.toString();
+    
+    const participantWithHostRole = await Participant.findOne({
+        room: room._id,
+        user: req.user._id,
+        role: "host"
+    });
+
+    if(!isOriginalHost && !participantWithHostRole){
+        throw new ApiError(403, "Only host can update room settings");
+    }
+
+    if(chatEnabled !== undefined) room.settings.chatEnabled = chatEnabled;
+    if(voiceEnabled !== undefined) room.settings.voiceEnabled = voiceEnabled;
+    if(allowScreenShare !== undefined) room.settings.allowScreenShare = allowScreenShare;
+    if(videoEnabled !== undefined) room.settings.videoEnabled = videoEnabled;
+
+    await room.save();
+
+    return res
+           .status(200)
+           .json(new ApiResponse(201, room, "Room settings updated successfully"));
+});
+
+const updateParticipantAccess = asyncHandler(async (req, res) => {
+    const {roomCode, participantId} = req.params;
+    const {role} = req.body;
+
+    if(!roomCode || !participantId){
+        throw new ApiError(401, "Room Code and Participant ID are required to update participant access");
+    }
+
+    const room = await Room.findOne({roomCode, isActive: true});
+
+    if(!room){
+        throw new ApiError(404, "Room is not found or Inactive");
+    }
+
+    const participant = await Participant.findById(participantId);
+
+    if(!participant){
+        throw new ApiError(404, "Participant not found");
+    }
+
+    // const isParticipant = participant.user.toString() === req.user._id.toString();
+    const isHost = room.host.toString() === req.user._id.toString();
+
+    if(!isHost){ 
+        throw new ApiError(403, "Only host can update participant role");
+    }
+
+    if(role !== undefined){
+        if(!["host", "participant"].includes(role)){
+            throw new ApiError(400, "Invalid role");
+        }
+
+        participant.role = role;
+        await participant.save();
+    }
+
+
+    return res
+           .status(200)
+           .json(new ApiResponse(201, participant, "Participant access updated successfully"));
+});
+
+
 
 export {
     createRoom,
@@ -224,4 +313,6 @@ export {
     endRoom,
     getRoomHistory,
     deleteAllRoomsHistory,
+    updateRoomSettings,
+    updateParticipantAccess
 }
