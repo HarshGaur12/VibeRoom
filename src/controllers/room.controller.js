@@ -4,6 +4,7 @@ import { ApiResponse } from "../utils/ApiResponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { Participant } from "../models/participant.model.js"
 import crypto from "crypto";
+import { Invite } from "../models/invite.model.js";
 
 const generateRoomCode = () => crypto.randomBytes(4).toString("hex");
 
@@ -65,6 +66,15 @@ const createRoom = asyncHandler(async (req, res) => {
     room.participants.push(hostAsParticipant._id);
     await room.save();
 
+    const invite = await Invite.create({
+        room: room._id,
+        inviter: req.user._id
+    });
+
+    if(!invite){
+        throw new ApiError(500, "Unable to create invite model.");
+    }
+
     const updatedRoom = await updatingParticipantsInRoom(room._id);
 
     if(!updatedRoom){
@@ -74,7 +84,7 @@ const createRoom = asyncHandler(async (req, res) => {
 
     return res.status(200)
               .json(
-                new ApiResponse(201, updatedRoom, "Room Created Successfully")
+                new ApiResponse(201, {updatedRoom, inviteLink}, "Room Created Successfully")
               )
 
 });
@@ -262,7 +272,7 @@ const updateRoomSettings = asyncHandler(async (req, res) => {
            .json(new ApiResponse(201, room, "Room settings updated successfully"));
 });
 
-const updateParticipantAccess = asyncHandler(async (req, res) => {
+const updateParticipantRole = asyncHandler(async (req, res) => {
     const {roomCode, participantId} = req.params;
     const {role} = req.body;
 
@@ -282,7 +292,6 @@ const updateParticipantAccess = asyncHandler(async (req, res) => {
         throw new ApiError(404, "Participant not found");
     }
 
-    // const isParticipant = participant.user.toString() === req.user._id.toString();
     const isHost = room.host.toString() === req.user._id.toString();
 
     if(!isHost){ 
@@ -314,5 +323,5 @@ export {
     getRoomHistory,
     deleteAllRoomsHistory,
     updateRoomSettings,
-    updateParticipantAccess
+    updateParticipantRole
 }

@@ -12,21 +12,6 @@ const inviteSchema = new Schema({
         ref: "User",
         required: true
     },
-    inviteeEmail:{
-        type: String,
-        required: true,
-        trim: true,
-    },
-    status:{
-        type: String,
-        enum: ["pending", "accepted", "declined"],
-        default: "pending"
-    },
-    token:{
-        type: String,
-        required: true,
-        unique: true,
-    },
 
 },{ timestamps: true });
 
