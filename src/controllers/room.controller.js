@@ -75,12 +75,13 @@ const createRoom = asyncHandler(async (req, res) => {
         throw new ApiError(500, "Unable to create invite model.");
     }
 
+    const inviteLink = `${process.env.APP_BASE_URL}/rooms/join/${room.roomCode}`;
+
     const updatedRoom = await updatingParticipantsInRoom(room._id);
 
     if(!updatedRoom){
         throw new ApiError(500, "Something went wrong while fetching room details.");
     }
-
 
     return res.status(200)
               .json(
@@ -209,7 +210,7 @@ const endRoom = asyncHandler(async (req, res) => {
 });
 
 const getRoomHistory = asyncHandler(async (req, res) => {
-    const rooms = await Room.find({isActive: false, host: req.user._id})
+    const rooms = await Room.find({ host: req.user._id})
                             .sort({createdAt: -1});
 
     if(!rooms){
