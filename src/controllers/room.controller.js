@@ -91,7 +91,7 @@ const createRoom = asyncHandler(async (req, res) => {
 });
 
 const joinRoom = asyncHandler(async (req, res) => {
-    const {roomCode} = req.body;
+    const {roomCode} = req.params;
 
     if(!roomCode || roomCode.trim()===""){
         throw new ApiError(401, "Room Code is required to join a room");
