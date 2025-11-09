@@ -314,6 +314,32 @@ const updateParticipantRole = asyncHandler(async (req, res) => {
            .json(new ApiResponse(201, participant, "Participant access updated successfully"));
 });
 
+const getRoomDetails = asyncHandler(async (req, res) => {
+    const {roomCode} = req.params;
+
+    if(!roomCode?.trim()) {
+        throw new ApiError(400, "Room Code is required");
+    }
+
+    const room = await Room.findOne({roomCode, isActive: true});
+
+    if(!room) {
+        throw new ApiError(404, "Room not found or inactive");
+    }
+
+    const updatedRoom = await updatingParticipantsInRoom(room._id);
+
+    if(!updatedRoom){
+        throw new ApiError(500, "Something went wrong while fetching room details.");
+    }
+
+    return res.status(200)
+              .json(
+                new ApiResponse(201, updatedRoom, "Room details fetched successfully")
+              );
+
+});
+
 
 
 export {
@@ -324,5 +350,6 @@ export {
     getRoomHistory,
     deleteAllRoomsHistory,
     updateRoomSettings,
-    updateParticipantRole
+    updateParticipantRole,
+    getRoomDetails
 }
