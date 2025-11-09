@@ -12,7 +12,7 @@ const updatingParticipantsInRoom = async(roomId) =>{
     try {
         const updatedRoom = await Room.findById(roomId).populate({
             path: "participants",
-            select: "user",
+            select: "user role",
             populate: {
                 path: "user",
                 select: "username avatar"
