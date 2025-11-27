@@ -1,6 +1,7 @@
 import express from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
+import errorHandler from "./middlewares/error.middleware.js";
 
 const app = express();
 
@@ -27,5 +28,7 @@ import roomRouter from "./routes/room.route.js";
 // routes declaration
 app.use("/api/v1/users", userRouter)
 app.use("/api/v1/rooms", roomRouter)
+
+app.use(errorHandler);
 
 export {app};
